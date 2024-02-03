@@ -1,0 +1,23 @@
+Operating systems: Windows 11, version 23H2
+
+Versions of software: LAMMPS 64-bit 2Aug2023-MSMPI
+
+Any required non-standard hardware: No
+
+Instructions to install: https://docs.lammps.org/Install_windows.html
+
+Instructions to run on data: mpiexec -np xx lmp -in input.lmp (xx is the number of processors to use)
+
+Expected output: "stress-curve-xx.txt" for stress data; "dump.xx" for atomic configurations
+
+Expected run time: several hours to several days depends on the number of processors
+
+How to run the software on your data:
+
+Structure:
+High entropy alloy structure can be created using LAMMPS script or atomsk command.
+
+Simulation:
+"NbTiZrMoV.lmp" is the structure model created LAMMPS script or atomsk.
+"library.meam", "NbTiZrMoV.meam" are the interatomic potential files.
+"input.lmp" is the file to define the simulation script

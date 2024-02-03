@@ -1,0 +1,36 @@
+
+# ------------------------ VARIABLES ------------------------------
+variable		lat_cont equal 3.1
+variable 		fNb equal 20
+variable		fTi equal 20
+variable 		fZr equal 20
+variable 		fMo equal 20
+variable 		fV equal 20
+variable		randomseed equal 2345674
+variable        T equal 300 #Temperature: 300K
+
+# ------------------------ INITIALIZATION ------------------------------
+units           metal
+boundary	    p p p
+atom_style	    atomic
+atom_modify     map array
+neighbor		2.0 bin
+neigh_modify	delay 1 check yes
+
+# ------------------------ ATOM CONFIGURATION ------------------------------
+lattice         bcc ${lat_cont}
+region          box block 0 20 0 20 0 20 units lattice  
+create_box      5 box
+create_atoms    1 box 
+
+set             type 1 type/fraction 2 $((v_fTi+v_fZr+v_fMo+v_fV)/100.0) 1234567
+set             type 2 type/fraction 3 $((v_fZr+v_fMo+v_fV)/(v_fTi+v_fZr+v_fMo+v_fV)) 1234566
+set             type 3 type/fraction 4 $((v_fMo+v_fV)/(v_fZr+v_fMo+v_fV)) 1234565
+set             type 4 type/fraction 5 $((v_fV)/(v_fMo+v_fV)) 1234564
+
+# ------------------------ FORCE FIELDS ------------------------------
+pair_style		meam
+pair_coeff		* * library.meam Nb Ti Zr Mo V NbTiZrMoV.meam Nb Ti Zr Mo V
+
+# ------------------------ OUTPUTING STRUCTURE ------------------------------
+write_data      NbTiZrMoV.data  

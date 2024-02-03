@@ -1,0 +1,161 @@
+# Input file for uniaxial tensile test of Nb-Ti-Zr-Mo-V Alloy at 300K
+
+# ------------------------ VARIABLES ------------------------------
+variable		lat_cont equal 3.1
+variable 		fNb equal 20
+variable		fTi equal 20
+variable 		fZr equal 20
+variable 		fMo equal 20
+variable 		fV equal 20
+variable		randomseed equal 2345674
+variable        T equal 300 #Temperature: 300K
+variable 		srate equal 1.0e9
+variable 		SR equal "v_srate / 1.0e12" #Strain Rate: 0.001ps-1
+variable	    TS equal 0.001 #Timestep: 0.001ps=1fs
+variable        HS equal 100000 #Heating Steps
+variable        RS equal 100000 #Relaxing Steps
+variable        DS equal 500000 #Deformation Steps
+
+# ------------------------ INITIALIZATION ------------------------------
+units           metal
+boundary	    p p p
+atom_style	    atomic
+atom_modify     map array
+neighbor		2.0 bin
+neigh_modify	delay 1 check yes
+
+# ------------------------ ATOM CONFIGURATION ------------------------------
+read_data      NbTiZrMoV.lmp 
+
+# ------------------------ FORCE FIELDS ------------------------------
+pair_style		meam
+pair_coeff		* * library.meam Nb Ti Zr Mo V NbTiZrMoV.meam Nb Ti Zr Mo V
+
+
+# ------------------------ COMPUTES PARAMETERS ------------------------------
+compute 		pe all pe/atom
+compute 		ke all ke/atom
+compute 		mytemp all temp
+compute 		stress all stress/atom NULL
+compute         centrosym all centro/atom 8
+
+# ------------------------ EQUILIBRATION ------------------------------
+# Energy Minimization
+reset_timestep  0
+fix	            1 all box/relax x 0.0 y 0.0 z 0.0
+dump	        1 all custom 1000 dump.minimization.* id type x y z
+min_style	    cg
+minimize	    0.0 1.0e-8 1000 10000
+undump		    1
+unfix           1
+
+write_data      NbTiZrMoV_min.data
+
+
+# Energy Equilibration
+reset_timestep  0
+timestep	    ${TS}
+
+#Heated to 300K
+velocity	    all create 0.1 123456 dist gaussian
+fix	            1 all npt temp 0.1 ${T} 0.1 iso 0.0 0.0 1.0
+thermo	        10000
+thermo_style    custom step temp etotal press vol
+
+dump	        1 all atom 100000 Alloy-Heat.lammpstrj
+run		        ${HS}
+undump		    1
+unfix		    1
+
+#Relax at 300K
+fix	            2 all npt temp ${T} ${T} 0.1 iso 0.0 0.0 1.0
+dump	        2 all atom 100000 Alloy-Relax.lammpstrj
+run		        ${RS}
+undump		    2
+unfix		    2
+
+write_data      NbTiZrMoV_equi_300.data
+
+# ------------------------ UNIAXIAL TENSILE DEFORMATION ------------------------------
+
+reset_timestep  0
+
+#Deform along x axis
+variable        NoAtom equal "count(all)"
+variable        xmin equal xlo
+variable        xmax equal xhi
+variable        ymin equal ylo
+variable        ymax equal yhi
+variable        zmin equal zlo
+variable        zmax equal zhi
+variable        lx   equal ${xmax}-${xmin}
+variable        ly   equal ${ymax}-${ymin}
+variable        lz   equal ${zmax}-${zmin}
+variable        avol equal ${lx}*${ly}*${lz}/${NoAtom}
+
+compute	        s all stress/atom NULL
+compute	        avexx all reduce ave c_s[1]
+compute	        aveyy all reduce ave c_s[2]
+compute	        avezz all reduce ave c_s[3]
+compute	        avexy all reduce ave c_s[4]
+compute	        avexz all reduce ave c_s[5]
+compute	        aveyz all reduce ave c_s[6]
+variable        stressfactor equal 0.1/v_avol/1000
+
+variable        s1 equal c_avexx*v_stressfactor
+fix             sxx all ave/time 1 10000 10000 v_s1 file stress-curve-xx.txt
+variable        s2 equal c_aveyy*v_stressfactor
+fix             syy all ave/time 1 10000 10000 v_s2 file stress-curve-yy.txt
+variable        s3 equal c_avezz*v_stressfactor
+fix             szz all ave/time 1 10000 10000 v_s3 file stress-curve-zz.txt
+variable        s4 equal c_avexy*v_stressfactor
+fix             sxy all ave/time 1 10000 10000 v_s4 file stress-curve-xy.txt
+variable        s5 equal c_avexz*v_stressfactor
+fix             sxz all ave/time 1 10000 10000 v_s5 file stress-curve-xz.txt
+variable        s6 equal c_aveyz*v_stressfactor
+fix             syz all ave/time 1 10000 10000 v_s6 file stress-curve-yz.txt
+
+variable        asxx atom c_s[1]*v_stressfactor
+fix             asxx all ave/atom 1 10000 10000 v_asxx
+variable        asyy atom c_s[2]*v_stressfactor
+fix             asyy all ave/atom 1 10000 10000 v_asyy
+variable        aszz atom c_s[3]*v_stressfactor
+fix             aszz all ave/atom 1 10000 10000 v_aszz
+variable        asxy atom c_s[4]*v_stressfactor
+fix             asxy all ave/atom 1 10000 10000 v_asxy
+variable        asxz atom c_s[5]*v_stressfactor
+fix             asxz all ave/atom 1 10000 10000 v_asxz
+variable        asyz atom c_s[6]*v_stressfactor
+fix             asyz all ave/atom 1 10000 10000 v_asyz
+
+# Storing Initial length
+variable 		tmp equal "lx"
+variable 		L0 equal ${tmp}
+print 			"Initial Length, L0: ${L0}"
+
+# ------------------------ DEFORMATION ------------------------------
+fix 			1 all nvt temp ${T} ${T} 0.1 drag 1
+fix 			2 all deform 1 x erate ${SR} units box remap x
+
+# Output strain and stress info to file
+# for units metal, pressure is in [bars] = 100 [kPa] = 1/10000 [GPa]
+# p2, p3, p4 are in GPa
+variable 		strain equal "(lx - v_L0)/v_L0"
+variable 		p1 equal "v_strain"
+variable 		p2 equal "-pxx/10000"
+variable 		p3 equal "-pyy/10000"
+variable 		p4 equal "-pzz/10000"
+
+# ------------------------ PRINTING DATA ------------------------------
+
+# Display thermo
+thermo 			1000
+thermo_style 	custom step v_p1 v_p2 v_p3 v_p4 temp press vol pe ke etotal
+
+#dump_modify 			
+dump 			1 all custom 1000 dump.tensile id type x y z c_centrosym c_stress[1] c_stress[2] c_stress[3] c_stress[4] c_stress[5] c_stress[6]
+
+run 			${DS}
+
+# ------------------------ SIMULATION DONE ------------------------------
+print 			"Simulation Complete!"

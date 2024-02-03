@@ -1,0 +1,6 @@
+atomsk --create bcc 3.1 Mo -duplicate 20 20 20 Mo.cfg
+atomsk Mo.cfg -select random 20% Mo -substitute Mo Nb NbMo.cfg
+atomsk NbMo.cfg -select random 3200 Mo -substitute Mo V NbMoV.cfg
+atomsk NbMoV.cfg -select random 3200 Mo -substitute Mo Ti NbTiMoV.cfg
+atomsk NbTiMoV.cfg -select random 3200 Mo -substitute Mo Zr NbTiZrMoV.cfg
+atomsk NbTiZrMoV.cfg lammps
