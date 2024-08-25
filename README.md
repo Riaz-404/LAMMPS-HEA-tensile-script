@@ -4,7 +4,7 @@
 Effect of alloying element content, temperature, and strain rate on the mechanical behavior of NbTiZrMoV high entropy alloy: A molecular dynamics study</h2>
 
 
-doi: ...
+doi: https://doi.org/10.1016/j.mtcomm.2024.110071
 
 <img src="https://github.com/Riaz-404/LAMMPS-HEA-tensile-script/assets/66328924/0c480431-fa3d-4047-96d4-432c7a228109" height="15px"> Operating systems: Windows 11, version 23H2
 
