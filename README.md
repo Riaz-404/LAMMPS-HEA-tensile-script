@@ -1,6 +1,7 @@
 <h1 align="center"> LAMMPS-HEA-tensile-script</h1> 
 
-<h2 align="center">A Molecular Dynamics Study on the Uniaxial Tensile Behaviour of NbTiZrMoV High Entropy Alloy: Effect of Temperature, Strain Rate and Alloying Element Content</h2>
+<h2 align="center">
+Effect of alloying element content, temperature, and strain rate on the mechanical behavior of NbTiZrMoV high entropy alloy: A molecular dynamics study</h2>
 
 
 doi: ...
